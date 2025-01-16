@@ -19,8 +19,8 @@ const ArticleSchema = new Schema(
     contentBlocks: { type: [ContentBlockSchema], required: true },
     categoryIds: { type: [Types.ObjectId], ref: 'Category' },
     is_active: { type: Boolean, default: true },
-    likes: { type: [Types.ObjectId], ref: 'User', default: [] },
-    dislikes: { type: [Types.ObjectId], ref: 'User', default: [] },
+    likes: { type: [Types.ObjectId], ref: 'User' },
+    dislikes: { type: [Types.ObjectId], ref: 'User' },
   },
   { timestamps: true }
 )

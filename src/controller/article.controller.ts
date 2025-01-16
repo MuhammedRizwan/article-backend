@@ -4,6 +4,32 @@ import Article from "../model/article.model";
 import User from "../model/user.model";
 import { v2 as cloudinary } from "cloudinary";
 
+export async function get_all_articles(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const { id } = req.params;
+    const user = await User.findById(id);
+    if (!user) {
+      res.status(404).json({ success: false, message: "User not found" });
+      return;
+    }
+    const { articlePreferences } = user;
+
+    const articles = await Article.find({
+      categoryIds: { $in: articlePreferences },
+      is_active: true,
+    }).populate("categoryIds");
+
+    res.status(200).json({ success: true, data: articles });
+    return;
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function get_articles_by_user_id(
   req: Request,
   res: Response,
@@ -159,23 +185,21 @@ export async function likeAndUnlike_article(
     if (!userId) {
       throw new CustomError(400, "User id is required");
     }
-    const user = await User.findById(userId);
-    if (!user) {
-      throw new CustomError(404, "User not found");
-    }
     const article = await Article.findById(id);
     if (!article) {
       throw new CustomError(404, "Article not found");
     }
-    const likedBy = article.likes.some((like) => like === userId._id);
+    const likedBy = article.likes.some((like) => like == userId);
     if (likedBy) {
-      article.likes.pull(user._id);
+      article.likes.pull(userId);
     } else {
-      article.likes.push(userId._id);
+      article.likes.push(userId);
+      article.dislikes.pull(userId);
     }
-    await article.save();
+    const articleData = await article.save();
 
-    res.status(200).json({ success: true, data: article });
+    res.status(200).json({ success: true, data: articleData });
+    return;
   } catch (error) {
     next(error);
   }
@@ -192,25 +216,19 @@ export async function dislikeAndUndislike_article(
     if (!userId) {
       throw new CustomError(400, "User id is required");
     }
-    const user = await User.findById(userId);
-    if (!user) {
-      throw new CustomError(404, "User not found");
-    }
     const article = await Article.findById(id);
     if (!article) {
       throw new CustomError(404, "Article not found");
     }
-    const dislikedBy = article.dislikes.some(
-      (dislike) => dislike === userId._id
-    );
+    const dislikedBy = article.dislikes.some((dislike) => dislike == userId);
     if (dislikedBy) {
-      article.dislikes.pull(user._id);
+      article.dislikes.pull(userId);
     } else {
-      article.dislikes.push(userId._id);
+      article.dislikes.push(userId);
+      article.likes.pull(userId);
     }
-    await article.save();
-
-    res.status(200).json({ success: true, data: article });
+    const articleData = await article.save();
+    res.status(200).json({ success: true, data: articleData });
   } catch (error) {
     next(error);
   }
