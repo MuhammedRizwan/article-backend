@@ -8,6 +8,7 @@ import {
   verifyRefreshToken,
 } from "../util/jwt";
 import { CustomError } from "../util/custom_error";
+import { JwtPayload } from "jsonwebtoken";
 
 export async function login(
   req: Request,
@@ -31,7 +32,7 @@ export async function login(
     if (!user) {
       throw new CustomError(401, "Invalid Email or Phone");
     }
-    console.log(user)
+    console.log(user);
     const isMatch = await comparePassword(password, user.password);
     if (!isMatch) {
       throw new CustomError(401, "Invalid Password");
@@ -53,7 +54,9 @@ export async function login(
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    res.status(200).json({success: true, message: "Login successful",data:user});;
+    res
+      .status(200)
+      .json({ success: true, message: "Login successful", data: user });
     return;
   } catch (error) {
     next(error);
@@ -107,7 +110,7 @@ export async function register(
     }
 
     const hashedPassword = await hashPassword(password);
-    console.log(articlePreferences)
+    console.log(articlePreferences);
     const user = await User.create({
       firstName,
       lastName,
@@ -118,7 +121,13 @@ export async function register(
       articlePreferences,
     });
 
-    res.status(201).json({success: true, message: "User created successfully",data:user });
+    res
+      .status(201)
+      .json({
+        success: true,
+        message: "User created successfully",
+        data: user,
+      });
     return;
   } catch (error) {
     next(error);
@@ -133,7 +142,7 @@ export async function logout(
   try {
     res.clearCookie("accessToken");
     res.clearCookie("refreshToken");
-    res.status(200).json({success: true, message: "Logout successful" });
+    res.status(200).json({ success: true, message: "Logout successful" });
     return;
   } catch (error) {
     next(new CustomError(500, "Logout failed", error));
@@ -152,36 +161,27 @@ export async function refreshToken(
       throw new CustomError(401, "Refresh token missing");
     }
 
-    const payload: any = verifyRefreshToken(refreshToken);
+    const payload: string | JwtPayload = verifyRefreshToken(refreshToken);
 
-    if (!payload) {
-      throw new CustomError(403, "Invalid refresh token");
+    if (typeof payload === "object" && "id" in payload) {
+      const newAccessToken = generateAccessToken(payload.id);
+
+      res.cookie("accessToken", newAccessToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "strict",
+        maxAge: 15 * 60 * 1000,
+      });
+    } else {
+      throw new CustomError(403, "Invalid payload");
     }
 
-    const newAccessToken = generateAccessToken(payload.id);
-    const newRefreshToken = generateRefreshToken(payload.id);
-
-    res.cookie("accessToken", newAccessToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "strict",
-      maxAge: 15 * 60 * 1000,
-    });
-
-    res.cookie("refreshToken", newRefreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
-
-    res.status(200).json({success: true, message: "Tokens refreshed" });
+    res.status(200).json({ success: true, message: "Tokens refreshed" });
     return;
   } catch (error) {
     next(error);
   }
 }
-
 
 export async function getUser(req: Request, res: Response, next: NextFunction) {
   try {
@@ -189,17 +189,22 @@ export async function getUser(req: Request, res: Response, next: NextFunction) {
     if (!user) {
       throw new CustomError(404, "User not found");
     }
-    res.status(200).json({success: true, message: "User found",data:user });
+    res.status(200).json({ success: true, message: "User found", data: user });
     return;
   } catch (error) {
     next(error);
   }
 }
 
-export async function updateUser(req: Request, res: Response, next: NextFunction) {
+export async function updateUser(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
   try {
     const { id } = req.params;
-    const { firstName, lastName, email, phone, dob, articlePreferences } = req.body;
+    const { firstName, lastName, email, phone, dob, articlePreferences } =
+      req.body;
     const user = await User.findById(id);
     if (!user) {
       throw new CustomError(404, "User not found");
@@ -211,14 +216,20 @@ export async function updateUser(req: Request, res: Response, next: NextFunction
     user.dob = dob;
     user.articlePreferences = articlePreferences;
     await user.save();
-    res.status(200).json({success: true, message: "User updated",data:user });
+    res
+      .status(200)
+      .json({ success: true, message: "User updated", data: user });
     return;
   } catch (error) {
     next(error);
   }
 }
 
-export async function changePassword(req: Request, res: Response, next: NextFunction):Promise<void> {
+export async function changePassword(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
   try {
     const { id } = req.params;
     const { oldPassword, newPassword, confirmPassword } = req.body;
@@ -231,11 +242,16 @@ export async function changePassword(req: Request, res: Response, next: NextFunc
       throw new CustomError(400, "Old password is incorrect");
     }
     if (newPassword !== confirmPassword) {
-      throw new CustomError(400, "New password and confirm password do not match");
+      throw new CustomError(
+        400,
+        "New password and confirm password do not match"
+      );
     }
     user.password = await hashPassword(newPassword);
     await user.save();
-    res.status(200).json({success: true, message: "Password changed successfully" });
+    res
+      .status(200)
+      .json({ success: true, message: "Password changed successfully" });
     return;
   } catch (error) {
     next(error);

@@ -4,6 +4,13 @@ import Article from "../model/article.model";
 import User from "../model/user.model";
 import { v2 as cloudinary } from "cloudinary";
 
+interface ContentBlock {
+  _id?: string;
+  type: "image" | "header" | "text" | "video";
+  id: string;
+  content?: string;
+  cloudinaryId?: string;
+}
 export async function get_all_articles(
   req: Request,
   res: Response,
@@ -103,32 +110,10 @@ export async function edit_article(
 ): Promise<void> {
   try {
     const { id } = req.params;
-    const { title, description, contentBlocks, categoryIds } = req.body;
-    if (!title || !description || !contentBlocks || !categoryIds) {
-      throw new CustomError(400, "All fields are required");
-    }
 
-    if (!Array.isArray(contentBlocks) || contentBlocks.length === 0) {
-      throw new CustomError(400, "Content blocks must be a non-empty array");
-    }
-
-    const article = await Article.findById(id);
-    if (!article) {
-      throw new CustomError(404, "Article not found");
-    }
-
-    article.title = title;
-    article.description = description;
-    contentBlocks.forEach((block) => {
-      article.contentBlocks.push({
-        type: block.type,
-        id: block.id,
-        content: block.content,
-      });
+    const article = await Article.findByIdAndUpdate(id, req.body, {
+      new: true,
     });
-    article.categoryIds = categoryIds;
-
-    await article.save();
 
     res.status(200).json({ success: true, data: article });
     return;

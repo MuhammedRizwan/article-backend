@@ -1,4 +1,4 @@
-import mongoose, { Schema, model, Types } from 'mongoose'
+import { Schema, model, Types } from 'mongoose'
 
 const ContentBlockSchema = new Schema({
   type: {
