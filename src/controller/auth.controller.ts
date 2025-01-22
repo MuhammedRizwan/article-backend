@@ -30,26 +30,26 @@ export async function login(
       user = await User.findOne({ phone: identifier });
     }
     if (!user) {
-      throw new CustomError(401, "Invalid Email or Phone");
+      throw new CustomError(404, "Invalid Email or Phone");
     }
     const isMatch = await comparePassword(password, user.password);
     if (!isMatch) {
-      throw new CustomError(401, "Invalid Password");
+      throw new CustomError(404, "Invalid Password");
     }
     const accessToken = generateAccessToken(user.id);
     const refreshToken = generateRefreshToken(user.id);
-
+    
     res.cookie("accessToken", accessToken, {
       httpOnly: true,
-      secure: true,
-      sameSite: "strict",
+      secure: true,  
+      sameSite: "none",
       maxAge: 15 * 60 * 1000,
     });
 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: true,
-      sameSite: "strict",
+      sameSite: "none",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
