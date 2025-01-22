@@ -38,18 +38,18 @@ export async function login(
     }
     const accessToken = generateAccessToken(user.id);
     const refreshToken = generateRefreshToken(user.id);
-    
+
     res.cookie("accessToken", accessToken, {
       httpOnly: true,
       secure: true,  
-      sameSite: "none",
+      sameSite: "strict",
       maxAge: 15 * 60 * 1000,
     });
 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: true,
-      sameSite: "none",
+      sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
