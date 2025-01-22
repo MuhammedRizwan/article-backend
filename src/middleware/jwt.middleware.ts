@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { NextFunction, Request, Response } from 'express';
+import { CustomError } from '../util/custom_error';
 
 declare global {
     namespace Express {
@@ -18,6 +19,9 @@ export default function JwtMiddleware(req:Request, res: Response, next:NextFunct
 
   try {
     const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET as string); 
+    if(!decoded) {
+      throw new CustomError(403, "Invalid payload");
+    }
     req.user = decoded; 
     next();
   } catch (error) {

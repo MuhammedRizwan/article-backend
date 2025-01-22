@@ -32,7 +32,6 @@ export async function login(
     if (!user) {
       throw new CustomError(401, "Invalid Email or Phone");
     }
-    console.log(user);
     const isMatch = await comparePassword(password, user.password);
     if (!isMatch) {
       throw new CustomError(401, "Invalid Password");
@@ -110,7 +109,6 @@ export async function register(
     }
 
     const hashedPassword = await hashPassword(password);
-    console.log(articlePreferences);
     const user = await User.create({
       firstName,
       lastName,
@@ -121,13 +119,11 @@ export async function register(
       articlePreferences,
     });
 
-    res
-      .status(201)
-      .json({
-        success: true,
-        message: "User created successfully",
-        data: user,
-      });
+    res.status(201).json({
+      success: true,
+      message: "User created successfully",
+      data: user,
+    });
     return;
   } catch (error) {
     next(error);
@@ -232,12 +228,12 @@ export async function changePassword(
 ): Promise<void> {
   try {
     const { id } = req.params;
-    const { oldPassword, newPassword, confirmPassword } = req.body;
+    const { currentPassword, newPassword, confirmPassword } = req.body;
     const user = await User.findById(id);
     if (!user) {
       throw new CustomError(404, "User not found");
     }
-    const isMatch = await comparePassword(oldPassword, user.password);
+    const isMatch = await comparePassword(currentPassword, user.password)
     if (!isMatch) {
       throw new CustomError(400, "Old password is incorrect");
     }

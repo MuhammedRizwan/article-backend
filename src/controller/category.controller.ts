@@ -63,7 +63,6 @@ export async function update_category(
     next: NextFunction
   ): Promise<void> {
     try {
-      console.log(req.body);
       const { id } = req.params;
       const { name, is_active } = req.body;
   

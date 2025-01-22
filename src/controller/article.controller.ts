@@ -44,7 +44,7 @@ export async function get_articles_by_user_id(
 ): Promise<void> {
   try {
     const { id } = req.params;
-    const articles = await Article.find({ userId: id }).populate("categoryIds");
+    const articles = await Article.find({ userId: id }).populate("categoryIds").sort({ createdAt: -1 });
     res.status(200).json({ success: true, data: articles });
   } catch (error) {
     next(error);
@@ -229,7 +229,6 @@ export async function delete_cloudinary_data(
     api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET,
   });
-  console.log(req.body);
   const { publicId, resourceType } = req.body;
   if (!publicId || !resourceType) {
     res.status(400).json({ error: "Missing required parameters" });
