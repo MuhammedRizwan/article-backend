@@ -41,9 +41,9 @@ export async function login(
 
     res.cookie("accessToken", accessToken, {
       httpOnly: true,
-      secure: true,  
+      secure: true,
       sameSite: "none",
-      domain:process.env.CORS_ORIGIN,
+      domain: process.env.CORS_ORIGIN,
       maxAge: 15 * 60 * 1000,
     });
 
@@ -51,7 +51,7 @@ export async function login(
       httpOnly: true,
       secure: true,
       sameSite: "none",
-      domain:process.env.CORS_ORIGIN,
+      domain: process.env.CORS_ORIGIN,
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -203,17 +203,10 @@ export async function updateUser(
     const { id } = req.params;
     const { firstName, lastName, email, phone, dob, articlePreferences } =
       req.body;
-    const user = await User.findById(id);
+    const user = await User.findByIdAndUpdate(id, { firstName, lastName, email, phone, dob, articlePreferences }, { new: true })
     if (!user) {
       throw new CustomError(404, "User not found");
     }
-    user.firstName = firstName;
-    user.lastName = lastName;
-    user.email = email;
-    user.phone = phone;
-    user.dob = dob;
-    user.articlePreferences = articlePreferences;
-    await user.save();
     res
       .status(200)
       .json({ success: true, message: "User updated", data: user });
