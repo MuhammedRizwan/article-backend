@@ -9,6 +9,7 @@ import {
 } from "../util/jwt";
 import { CustomError } from "../util/custom_error";
 import { JwtPayload } from "jsonwebtoken";
+import { Types } from "mongoose";
 
 export async function login(
   req: Request,
@@ -201,15 +202,35 @@ export async function updateUser(
 ) {
   try {
     const { id } = req.params;
-    const { firstName, lastName, email, phone, dob, articlePreferences } =
-      req.body;
-    const user = await User.findByIdAndUpdate(id, { firstName, lastName, email, phone, dob, articlePreferences }, { new: true })
-    if (!user) {
-      throw new CustomError(404, "User not found");
+    const { firstName, lastName, email, phone, dob, articlePreferences } = req.body;
+    
+    // Validate and cast `articlePreferences` to ObjectId
+    let preferences: Types.ObjectId[] = [];
+    if (articlePreferences && Array.isArray(articlePreferences)) {
+      preferences = articlePreferences.map((pref) => {
+        if (Types.ObjectId.isValid(pref)) {
+          return new Types.ObjectId(pref);
+        } else {
+          throw new Error(`Invalid ObjectId in articlePreferences: ${pref}`);
+        }
+      });
     }
-    res
-      .status(200)
-      .json({ success: true, message: "User updated", data: user });
+    
+    const user = await User.findByIdAndUpdate(
+      id,
+      { firstName, lastName, email, phone, dob, articlePreferences: preferences },
+      { new: true }
+    );
+    
+    if (!user) {
+      throw new CustomError(404, 'User not found');
+    }
+    
+    res.status(200).json({
+      success: true,
+      message: 'User updated',
+      data: user
+    });
     return;
   } catch (error) {
     next(error);
